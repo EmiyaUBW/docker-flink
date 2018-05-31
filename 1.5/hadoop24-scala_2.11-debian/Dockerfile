@@ -43,8 +43,6 @@ ENV FLINK_VERSION=1.5.0 \
 # Prepare environment
 ENV FLINK_HOME=/opt/flink
 ENV PATH=$FLINK_HOME/bin:$PATH
-RUN groupadd --system --gid=9999 flink && \
-    useradd --system --home-dir $FLINK_HOME --uid=9999 --gid=flink flink
 WORKDIR $FLINK_HOME
 
 ENV FLINK_URL_FILE_PATH=flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-${HADOOP_SCALA_VARIANT}.tgz
@@ -66,9 +64,12 @@ RUN set -ex; \
   rm -rf "$GNUPGHOME" flink.tgz.asc; \
   \
   tar -xf flink.tgz --strip-components=1; \
-  rm flink.tgz; \
-  \
-  chown -R flink:flink .;
+  rm flink.tgz
+
+RUN chgrp -R 0 /opt/flink && \
+    chmod -R g=u /opt/flink
+
+RUN chmod g=u /etc/passwd
 
 # Configure container
 COPY docker-entrypoint.sh /

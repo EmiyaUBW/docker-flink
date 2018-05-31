@@ -18,6 +18,14 @@
 # limitations under the License.
 ###############################################################################
 
+if ! whoami &> /dev/null; then
+    if [ -w /etc/passwd ]; then
+        echo "${USER_NAME:-flink}:x:$(id -u):0:${USER_NAME:-flink} user:${FLINK_HOME}:/sbin/nologin" >> /etc/passwd
+    fi
+fi
+cat /etc/passwd
+echo "running as $(whoami)"
+
 # If unspecified, the hostname of the container is taken as the JobManager address
 JOB_MANAGER_RPC_ADDRESS=${JOB_MANAGER_RPC_ADDRESS:-$(hostname -f)}
 
@@ -41,7 +49,7 @@ elif [ "$1" = "jobmanager" ]; then
     echo "query.server.port: 6125" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
     echo "config file: " && grep '^[^\n#]' "$FLINK_HOME/conf/flink-conf.yaml"
-    exec $(drop_privs_cmd) flink "$FLINK_HOME/bin/jobmanager.sh" start-foreground cluster
+    exec "$FLINK_HOME/bin/jobmanager.sh" start-foreground cluster
 elif [ "$1" = "taskmanager" ]; then
     TASK_MANAGER_NUMBER_OF_TASK_SLOTS=${TASK_MANAGER_NUMBER_OF_TASK_SLOTS:-$(grep -c ^processor /proc/cpuinfo)}
 
@@ -52,10 +60,10 @@ elif [ "$1" = "taskmanager" ]; then
 
     echo "Starting Task Manager"
     echo "config file: " && grep '^[^\n#]' "$FLINK_HOME/conf/flink-conf.yaml"
-    exec $(drop_privs_cmd) flink "$FLINK_HOME/bin/taskmanager.sh" start-foreground
+    exec "$FLINK_HOME/bin/taskmanager.sh" start-foreground
 elif [ "$1" = "local" ]; then
     echo "Starting local cluster"
-    exec $(drop_privs_cmd) flink "$FLINK_HOME/bin/jobmanager.sh" start-foreground local
+    exec "$FLINK_HOME/bin/jobmanager.sh" start-foreground local
 fi
 
 exec "$@"
